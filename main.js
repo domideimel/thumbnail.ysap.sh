@@ -163,6 +163,7 @@
                 return await loadImage(url);
             } catch (e) {
                 // Continue to next quality
+                if (state.isDebug) console.error(`Failed to load ${quality} thumbnail: ${e.message}`);
             }
         }
         throw new Error('Could not load any valid thumbnail for this video.');
