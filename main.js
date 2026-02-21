@@ -15,7 +15,7 @@
 
     // Configuration & Constants
     const CONFIG = {
-        FONT: 'Fira Mono',
+        FONT: 'Arial',
         COLORS: {
             BG: '#222',
             TEXT_PRIMARY: '#eee',
@@ -208,13 +208,13 @@
             const res = await fetch(embedUrl);
 
             if (!res.ok) {
-                throw new Error(`Failed to fetch video info: ${res.status}`);
+                 new Error(`Failed to fetch video info: ${res.status}`);
             }
 
             const data = await res.json();
 
             if (!data.title || !data.author_name) {
-                throw new Error('Invalid video or missing metadata');
+                new Error('Invalid video or missing metadata');
             }
 
             // Load thumbnail
@@ -329,9 +329,10 @@
         // Thumbnail with shadow
         ctx.save();
         ctx.shadowColor = CONFIG.COLORS.SHADOW;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.shadowBlur = 15;
-        const imgY = (canvas.height - 720) / 2;
-        ctx.drawImage(img, 0, imgY, 1280, 720);
+        ctx.drawImage(img, 0, (1280 - 720) / 2, 1280, 720);
         ctx.restore();
 
         // Headline
