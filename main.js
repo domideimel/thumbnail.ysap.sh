@@ -13,10 +13,13 @@
 const font = 'Fira Mono';
 let lastVideoId = null;
 let errorDiv;
+let isDebug = false;
 
 // Main Method
 function main() {
     window.addEventListener('load', () => {
+        isDebug = new URLSearchParams(window.location.search).has('debug');
+
         document.getElementById('url-form').addEventListener('submit', event => generate(event));
         document.getElementById('downloadBtn').addEventListener('click', downloadAll);
 
@@ -96,6 +99,10 @@ function downloadAll() {
     const output = document.getElementById('output');
     Array.from(output.children).forEach((a, i) => {
         setTimeout(() => {
+            if (isDebug) {
+                console.log('clicking');
+                console.log(a);
+            }
             a.click();
         }, i * 100);
     });
@@ -233,6 +240,10 @@ function drawImages(img, data, videoId) {
     // clear any existing images
     const output = document.getElementById('output');
     output.innerHTML = '';
+
+    if (isDebug) {
+        console.log(data);
+    }
 
     // draw every image
     const funcs = [
