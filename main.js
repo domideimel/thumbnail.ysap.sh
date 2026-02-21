@@ -13,6 +13,7 @@
 let lastVideoId = null;
 let font = 'Arial';
 
+// Main Method
 function main() {
     window.addEventListener('load', () => {
         document.getElementById('url-form').addEventListener('submit', event => generate(event))
@@ -94,7 +95,9 @@ function downloadAll() {
 
 // generate button
 async function generate(event) {
+    // prevent page reload
     event.preventDefault();
+
     const url = event.target?.[0]?.value ?? ''
     const videoId = getYouTubeID(url);
 
@@ -103,10 +106,8 @@ async function generate(event) {
         return;
     }
 
-    const api = 'https://noembed.com/embed?url=' + encodeURIComponent(url);
-
     try {
-        const res = await fetch(api);
+        const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
         const data = await res.json();
         process(data, videoId);
     } catch (err) {
@@ -154,13 +155,13 @@ function base64img(name, canvas) {
 
 function drawImages(img, data, videoId) {
     // clear any existing images
-    let output = document.getElementById('output');
+    const output = document.getElementById('output');
     output.innerHTML = '';
 
     console.log(data);
 
     // draw every image
-    let funcs = [
+    const funcs = [
         drawBasicImage,
         drawLargeImage,
         drawFullImage,
