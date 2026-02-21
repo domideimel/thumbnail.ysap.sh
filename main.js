@@ -127,7 +127,7 @@ async function generate(event) {
     try {
         const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
         if (!res.ok) {
-            throw new Error(`Failed to fetch video info: ${res.status}`);
+            new Error(`Failed to fetch video info: ${res.status}`);
         }
         const data = await res.json();
         process(data, videoId);
