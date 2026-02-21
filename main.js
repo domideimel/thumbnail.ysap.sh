@@ -10,6 +10,13 @@
  * - Dave Eddy <ysap@daveeddy.com>
  */
 
+/**
+ * IIFE (Immediately Invoked Function Expression)
+ *
+ * This pattern is used to create a new scope for the code, preventing variables
+ * and functions defined within from polluting the global namespace.
+ */
+
 (function () {
     'use strict';
 
