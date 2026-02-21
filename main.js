@@ -13,14 +13,13 @@
 let lastVideoId = null;
 let font = 'Arial';
 
-// allow user to press enter
-let urlInput = document.getElementById('url-input');
-urlInput.addEventListener('keypress', function onevent(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault();
-        generate();
-    }
-});
+function main() {
+    window.addEventListener('load', () => {
+        document.getElementById('url-form').addEventListener('submit', event => generate(event))
+    })
+
+    document.getElementById('downloadBtn').addEventListener('click', downloadAll);
+}
 
 // print a message and just DIE
 function fatal(s) {
@@ -94,9 +93,9 @@ function downloadAll() {
 }
 
 // generate button
-async function generate() {
-    let output = document.getElementById('output');
-    const url = document.getElementById('url-input').value.trim();
+async function generate(event) {
+    event.preventDefault();
+    const url = event.target?.[0]?.value ?? ''
     const videoId = getYouTubeID(url);
 
     if (!videoId) {
@@ -352,3 +351,6 @@ function drawBlurredImage(output, img, data, videoId) {
     let a = base64img(`${videoId}-blurred-image.jpg`, canvas);
     output.append(a);
 }
+
+// Bootstrapping the Application
+main()
