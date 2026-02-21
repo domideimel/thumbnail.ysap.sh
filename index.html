@@ -26,7 +26,9 @@
     Input a YouTube URL and click <span class="highlight">Generate Images</span> to generate multiple images:
     <br><br>
     <form onsubmit="generate()">
-        <input id="url-input" type="url" placeholder="Enter YouTube URL..."/>
+        <label for="url-input">
+            <input id="url-input" type="url" placeholder="Enter YouTube URL..."/>
+        </label>
         <button type="submit">Generate Images</button>
         <button type="button" onclick="downloadAll()" id="downloadBtn" style="display:none">Download All</button>
     </form>
