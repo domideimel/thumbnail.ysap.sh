@@ -10,27 +10,39 @@
  * - Dave Eddy <ysap@daveeddy.com>
  */
 
+const font = 'Fira Mono';
 let lastVideoId = null;
-let font = 'Arial';
+let errorDiv;
 
 // Main Method
 function main() {
     window.addEventListener('load', () => {
-        document.getElementById('url-form').addEventListener('submit', event => generate(event))
-    })
+        document.getElementById('url-form').addEventListener('submit', event => generate(event));
+        document.getElementById('downloadBtn').addEventListener('click', downloadAll);
 
-    document.getElementById('downloadBtn').addEventListener('click', downloadAll);
+        // Create error display
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'error';
+        errorDiv.style.display = 'none';
+        errorDiv.style.color = 'red';
+        errorDiv.style.margin = '10px 0';
+        document.getElementById('container').insertBefore(errorDiv, document.getElementById('output'));
+    });
 }
 
-// print a message and just DIE
-function fatal(s) {
-    alert(s);
-    console.error(s);
-    throw s;
+// Display error in UI
+function showError(message) {
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    } else {
+        alert(message);
+    }
+    console.error(message);
 }
 
-function videoIdToThumbnail(videoId) {
-    return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+function videoIdToThumbnail(videoId, quality) {
+    return `https://i.ytimg.com/vi/${videoId}/${quality}.jpg`;
 }
 
 function shortUrl(videoId) {
@@ -59,21 +71,20 @@ function wrapText(ctx, text, maxWidth) {
 
 // extract the ID portion of a youtube URL
 function getYouTubeID(url) {
-    let parsed;
     try {
-        parsed = new URL(url);
+        const parsed = new URL(url);
+        if (parsed.hostname === 'youtu.be') {
+            return parsed.pathname.slice(1);
+        }
+        if (parsed.hostname.includes('youtube.com')) {
+            return parsed.searchParams.get('v');
+        }
     } catch (e) {
-        fatal(e);
-        return;
+        showError('Invalid URL format');
+        return null;
     }
-
-    if (parsed.hostname === 'youtu.be') {
-        return parsed.pathname.slice(1);
-    }
-    if (parsed.hostname.includes('youtube.com')) {
-        return parsed.searchParams.get('v');
-    }
-    fatal('failed to extract youtube ID from URL');
+    showError('Failed to extract YouTube ID from URL');
+    return null;
 }
 
 // download all button clicked
@@ -82,12 +93,9 @@ function downloadAll() {
         return;
     }
 
-    let output = document.getElementById('output');
-    Array.from(output.children).forEach(function (a, i) {
-        setTimeout(function () {
-            // simulate clicking the link
-            console.log('clicking');
-            console.log(a);
+    const output = document.getElementById('output');
+    Array.from(output.children).forEach((a, i) => {
+        setTimeout(() => {
             a.click();
         }, i * 100);
     });
@@ -98,48 +106,73 @@ async function generate(event) {
     // prevent page reload
     event.preventDefault();
 
-    const url = event.target?.[0]?.value ?? ''
-    const videoId = getYouTubeID(url);
-
-    if (!videoId) {
-        alert('invalid youtube url');
+    const urlInput = document.getElementById('url-input');
+    const url = urlInput?.value?.trim();
+    if (!url) {
+        showError('Please enter a YouTube URL');
         return;
     }
 
+    const videoId = getYouTubeID(url);
+    if (!videoId) {
+        return;
+    }
+
+    // Hide previous error and disable button
+    if (errorDiv) errorDiv.style.display = 'none';
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Generating...';
+
     try {
         const res = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
+        if (!res.ok) {
+            throw new Error(`Failed to fetch video info: ${res.status}`);
+        }
         const data = await res.json();
         process(data, videoId);
     } catch (err) {
-        fatal(`error fetching video info: ${err}`);
+        showError(`Error fetching video info: ${err.message}`);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Generate Images';
     }
 }
 
 function process(data, videoId) {
     if (!data.title || !data.author_name || !data.url) {
-        fatal('invalid video or missing data');
+        showError('Invalid video or missing data');
         return;
     }
 
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = videoIdToThumbnail(videoId);
 
-    img.onload = function onload() {
+    const qualities = ['maxresdefault', 'hqdefault', 'mqdefault', 'default'];
+    let qualityIndex = 0;
+
+    function tryNextQuality() {
+        if (qualityIndex >= qualities.length) {
+            showError('Failed to load thumbnail');
+            return;
+        }
+        img.src = videoIdToThumbnail(videoId, qualities[qualityIndex]);
+        qualityIndex++;
+    }
+
+    img.onload = function() {
         lastVideoId = videoId;
         drawImages(img, data, videoId);
-
         document.getElementById('downloadBtn').style.display = 'inline-block';
     };
 
-    img.onerror = function onerror() {
-        alert('failed loading high-res thumbnail');
-    };
+    img.onerror = tryNextQuality;
+
+    tryNextQuality();
 }
 
 function base64img(name, canvas) {
-    let data = canvas.toDataURL('image/jpeg');
-
+    const data = canvas.toDataURL('image/jpeg');
     const a = document.createElement('a');
     a.download = name;
     a.href = data;
@@ -149,58 +182,26 @@ function base64img(name, canvas) {
     out.classList.add('generated');
 
     a.appendChild(out);
-
     return a;
 }
 
-function drawImages(img, data, videoId) {
-    // clear any existing images
-    const output = document.getElementById('output');
-    output.innerHTML = '';
-
-    console.log(data);
-
-    // draw every image
-    const funcs = [
-        drawBasicImage,
-        drawLargeImage,
-        drawFullImage,
-        drawBlurredImage,
-    ];
-    for (func of funcs) {
-        func(output, img, data, videoId);
-    }
-}
-
-// -------- image drawing functions
-
-function drawFullImage(output, img, data, videoId) {
+function createCanvas(width, height) {
     const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 1450;
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
-
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#222";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    return { canvas, ctx };
+}
 
-    ctx.shadowColor = '#000';
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    ctx.shadowBlur = 15;
-
-    ctx.drawImage(img, 0, (1280 - 720) / 2, 1280, 720);
-
-    // "Full Video on YouTube"
-    const headline = 'Full Video on YouTube';
+function drawHeadline(ctx, canvas, headline, x, y) {
     ctx.font = `110px ${font}`;
     ctx.fillStyle = "#eee";
     ctx.textAlign = "center";
-    const x = canvas.width / 2;
-    const y = 170;
     ctx.fillText(headline, x, y);
 
-    // draw the red oval around it
     const textMetrics = ctx.measureText(headline);
     const padding = 50;
     const radiusX = textMetrics.width / 2 + padding;
@@ -211,147 +212,130 @@ function drawFullImage(output, img, data, videoId) {
     ctx.beginPath();
     ctx.ellipse(x, y - 40, radiusX, radiusY, 0, 0, Math.PI * 2);
     ctx.stroke();
+}
 
-    // write the title
+function drawTitleAndAuthor(ctx, data, startY, maxWidth = 1240) {
     ctx.textAlign = "left";
     ctx.fillStyle = "#eee";
     ctx.font = `56px ${font}`;
-    const lines = wrapText(ctx, data.title, 1240);
+    const lines = wrapText(ctx, data.title, maxWidth);
     lines.forEach((line, i) => {
-        ctx.fillText(line, 20, 1100 + i * 56);
+        ctx.fillText(line, 20, startY + i * 56);
     });
 
-    // write the author name
     ctx.fillStyle = "#aaa";
     ctx.font = `28px ${font}`;
-    ctx.fillText(`YouTube: ${data.author_name}`, 20, 1100 + lines.length * 58 - 20);
+    ctx.fillText(`YouTube: ${data.author_name}`, 20, startY + lines.length * 58 - 20);
+    return lines.length;
+}
 
-    // write the url
+function drawImages(img, data, videoId) {
+    // clear any existing images
+    const output = document.getElementById('output');
+    output.innerHTML = '';
+
+    // draw every image
+    const funcs = [
+        drawBasicImage,
+        drawLargeImage,
+        drawFullImage,
+        drawBlurredImage,
+    ];
+    for (const func of funcs) {
+        func(output, img, data, videoId);
+    }
+}
+
+// -------- image drawing functions
+
+function drawFullImage(output, img, data, videoId) {
+    const { canvas, ctx } = createCanvas(1280, 1450);
+
+    // Shadow for image
+    ctx.shadowColor = '#000';
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 15;
+
+    const imgY = (canvas.height - 720) / 2;
+    ctx.drawImage(img, 0, imgY, 1280, 720);
+    ctx.shadowBlur = 0; // reset shadow
+
+    // Headline
+    const headline = 'Full Video on YouTube';
+    drawHeadline(ctx, canvas, headline, canvas.width / 2, 170);
+
+    // Title and author
+    const titleLines = drawTitleAndAuthor(ctx, data, 1100);
+
+    // URL
     const urlText = shortUrl(videoId);
     ctx.fillStyle = "#fff";
     ctx.font = `80px ${font}`;
     ctx.textAlign = "center";
-    ctx.fillText(urlText, 1280 / 2, 1100 + lines.length * 58 + 110);
+    ctx.fillText(urlText, 1280 / 2, 1100 + titleLines * 58 + 110);
 
-    let a = base64img(`${videoId}-full-image.jpg`, canvas);
-    output.append(a);
+    const a = base64img(`${videoId}-full-image.jpg`, canvas);
+    output.appendChild(a);
 }
 
 function drawLargeImage(output, img, data, videoId) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 1280;
-    const ctx = canvas.getContext('2d');
+    const { canvas, ctx } = createCanvas(1280, 1280);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#222";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const imgY = (canvas.height - 720) / 2;
+    ctx.drawImage(img, 0, imgY, 1280, 720);
 
-    ctx.drawImage(img, 0, (1280 - 720) / 2, 1280, 720);
-
-    // "Full Video on YouTube"
+    // Headline
     const headline = 'Full Video on YouTube';
-    ctx.font = `110px ${font}`;
-    ctx.fillStyle = "#eee";
-    ctx.textAlign = "center";
-    const x = canvas.width / 2;
-    const y = 170;
-    ctx.fillText(headline, x, y);
+    drawHeadline(ctx, canvas, headline, canvas.width / 2, 170);
 
-    // draw the red oval around it
-    const textMetrics = ctx.measureText(headline);
-    const padding = 50;
-    const radiusX = textMetrics.width / 2 + padding;
-    const radiusY = 110; // height of text + some padding
+    // Title and author
+    drawTitleAndAuthor(ctx, data, 1100);
 
-    ctx.strokeStyle = "#f00";
-    ctx.lineWidth = 15;
-    ctx.beginPath();
-    ctx.ellipse(x, y - 40, radiusX, radiusY, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // write the title
-    ctx.textAlign = "left";
-    ctx.fillStyle = "#eee";
-    ctx.font = `56px ${font}`;
-    const lines = wrapText(ctx, data.title, 1240);
-    lines.forEach((line, i) => {
-        ctx.fillText(line, 20, 1100 + i * 56);
-    });
-
-    // write the author
-    ctx.fillStyle = "#aaa";
-    ctx.font = `28px ${font}`;
-    ctx.fillText(`YouTube: ${data.author_name}`, 20, 1100 + lines.length * 58 - 20);
-
-    let a = base64img(`${videoId}-large-image.jpg`, canvas);
-    output.append(a);
+    const a = base64img(`${videoId}-large-image.jpg`, canvas);
+    output.appendChild(a);
 }
 
 function drawBasicImage(output, img, data, videoId) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 900;
-    const ctx = canvas.getContext('2d');
-
-    let title = data.title;
-    let author = data.author_name;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = "#222";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const { canvas, ctx } = createCanvas(1280, 900);
 
     // draw the original thumbnail
     ctx.drawImage(img, 0, 0, 1280, 720);
 
-    // write the title
-    ctx.fillStyle = "#eee";
-    ctx.font = `56px ${font}`;
-    let padding = 20;
-    const lines = wrapText(ctx, title, 1280 - padding * 2);
-    lines.forEach((line, i) => {
-        ctx.fillText(line, padding, 780 + i * 56);
-    });
+    // Title and author
+    const padding = 20;
+    drawTitleAndAuthor(ctx, data, 780, 1280 - padding * 2);
 
-    // write the author
-    ctx.fillStyle = "#aaa";
-    ctx.font = `28px ${font}`;
-    ctx.fillText(`YouTube: ${author}`, padding, 790 + lines.length * 58 - 20);
-
-    let a = base64img(`${videoId}-basic-image.jpg`, canvas);
-    output.append(a);
+    const a = base64img(`${videoId}-basic-image.jpg`, canvas);
+    output.appendChild(a);
 }
 
 function drawBlurredImage(output, img, data, videoId) {
-    const canvas = document.createElement('canvas');
-    canvas.width = 1280;
-    canvas.height = 720;
-    const ctx = canvas.getContext('2d');
+    const { canvas, ctx } = createCanvas(1280, 720);
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Fill black background
     ctx.fillStyle = "rgba(0, 0, 0, 1.0)";
     ctx.fillRect(0, 0, 1280, 720);
 
-    // try to blur the thumbnail (may not work on all browsers sadly)
+    // Blur the thumbnail
     ctx.filter = "blur(10px)";
     ctx.drawImage(img, 0, 0, 1280, 720);
-    ctx.filter = "none"; // reset
+    ctx.filter = "none";
 
-    // overlay some dark color to darken the thumbnail
+    // Overlay dark
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
     ctx.fillRect(0, 0, 1280, 720);
 
-    // draw the centered URL text
+    // URL text
     const urlText = shortUrl(videoId);
     ctx.fillStyle = "#fff";
     ctx.font = `80px ${font}`;
     ctx.textAlign = "center";
     ctx.fillText(urlText, 1280 / 2, 720 / 2);
 
-    let a = base64img(`${videoId}-blurred-image.jpg`, canvas);
-    output.append(a);
+    const a = base64img(`${videoId}-blurred-image.jpg`, canvas);
+    output.appendChild(a);
 }
 
 // Bootstrapping the Application
-main()
+main();
