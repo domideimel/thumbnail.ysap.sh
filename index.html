@@ -11,43 +11,46 @@
 	- Dave Eddy <ysap@daveeddy.com>
 -->
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<title>YouTube Social Image Generator</title>
-		<link rel="stylesheet" href="style.css?v=1">
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-	</head>
-	<body>
-		<div id="container">
-			<h1>YouTube Social <span class="highlight">Image Generator</span></h1>
-			<br>
-			Input a YouTube URL and click <span class="highlight">Generate Images</span> to generate multiple images:
-			<br><br>
-			<input id="url-input" type="text" placeholder="Enter YouTube URL..." />
-			<button onclick="generate()">Generate Images</button>
-			<button onclick="downloadAll()" id="downloadBtn" style="display:none">Download All</button>
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Social Image Generator</title>
+    <link rel="stylesheet" href="style.css?v=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="container">
+    <h1>YouTube Social <span class="highlight">Image Generator</span></h1>
+    <br>
+    Input a YouTube URL and click <span class="highlight">Generate Images</span> to generate multiple images:
+    <br><br>
+    <form onsubmit="generate()">
+        <input id="url-input" type="url" placeholder="Enter YouTube URL..."/>
+        <button type="submit">Generate Images</button>
+        <button type="button" onclick="downloadAll()" id="downloadBtn" style="display:none">Download All</button>
+    </form>
 
-			<div id="output"></div>
-			<br><br><br>
+    <div id="output"></div>
+    <br><br><br>
 
-			<div class="center">
-				<h2 class="title">About</h2>
-				<br>
-				<ul>
-					<li>Created by <span class="highlight">dave eddy</span> of <a href="https://ysap.sh/">You Suck at Programming</a></li>
-					<li>Images are rendered on the client and never touch my server</li>
-					<li>YouTube metadata is provided by <a href="https://noembed.com">noembed</a></li>
-				</ul>
-			</div>
-			<br>
+    <div class="center">
+        <h2 class="title">About</h2>
+        <br>
+        <ul>
+            <li>Created by <span class="highlight">dave eddy</span> of <a href="https://ysap.sh/">You Suck at
+                Programming</a></li>
+            <li>Images are rendered on the client and never touch my server</li>
+            <li>YouTube metadata is provided by <a href="https://noembed.com">noembed</a></li>
+        </ul>
+    </div>
+    <br>
 
-<pre class="footer"><code>source: <a class="alt" href="https://github.com/bahamas10/thumbnail.ysap.sh">github.com/bahamas10/thumbnail.ysap.sh</a>
+    <pre class="footer"><code>source: <a class="alt" href="https://github.com/bahamas10/thumbnail.ysap.sh">github.com/bahamas10/thumbnail.ysap.sh</a>
   &copy; dave eddy - <a class="alt" href="https://ysap.sh">ysap</a> <script>document.write(new Date().getFullYear())</script>
                           </code></pre>
-		</div>
+</div>
 
-		<script src="main.js"></script>
-	</body>
+<script src="main.js"></script>
+</body>
 </html>
