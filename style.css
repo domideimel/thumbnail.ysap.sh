@@ -12,135 +12,143 @@
 
 /* terminal theme (from theme bash script) */
 :root {
-	--color1: #5fffff;
-	--color2: #ff87af;
-	--color3: #87ff87;
-	--color4: #666;
-	--color5: #ffd7af;
+  --color1: #5fffff;
+  --color2: #ff87af;
+  --color3: #87ff87;
+  --color4: #666;
+  --color5: #ffd7af;
 }
 
 /* reset */
 * {
-	margin: 0;
-	padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
 ul {
-	list-style-type: none;
+  list-style-type: none;
 }
 
 /* helper */
 .center {
-	text-align: center;
+  text-align: center;
 }
 
 .title {
-	color: var(--color3);
+  color: var(--color3);
 }
 
 .highlight {
-	color: var(--color3);
+  color: var(--color3);
 }
 
 .hidden {
-	display: none;
+  display: none;
 }
 
 .float-right {
-	float: right;
+  float: right;
 }
 
 .shadow {
-	border: 1px solid #87ff8755; /* color3 */
-	box-shadow: 0 0 200px #87ff8734;
+  border: 1px solid #87ff8755; /* color3 */
+  box-shadow: 0 0 200px #87ff8734;
 }
 
 @media (max-width: 650px) {
-	.hide-mobile{
-		display: none;
-	}
+  .hide-mobile {
+    display: none;
+  }
 }
 
 /* layout and design */
 body {
-	background-color: #000;
-	color: var(--color5);
-	font-size: 12px;
+  background-color: #000;
+  color: var(--color5);
+  font-size: 12px;
 }
 
 .ansi-content {
-	color: #bbb;
+  color: #bbb;
 }
 
 body, code {
-	font-family: "Fira Mono", monospace;
-	font-weight: 400;
+  font-family: "Fira Mono", monospace;
+  font-weight: 400;
 }
 
 b, strong, h1, h2, h3, h4, h5, h6 {
-	font-weight: 900;
+  font-weight: 900;
 }
 
 #container {
-	text-align: center;
-	position: relative;
-	margin-right: auto;
-	margin-left: auto;
-	margin-top: 10px;
-	padding: 0 6px;
-	max-width: 1000px;
+  text-align: center;
+  position: relative;
+  margin-right: auto;
+  margin-left: auto;
+  margin-top: 10px;
+  padding: 0 6px;
+  max-width: 1000px;
 }
 
 a, a:visited {
-	color: var(--color1);
-	text-decoration: none;
+  color: var(--color1);
+  text-decoration: none;
 }
 
 a.plain-link, a.plain-link:visited {
-	color: inherit;
+  color: inherit;
 }
 
 .ansi-content a, .ansi-content a:visited {
-	color: inherit;
-	text-decoration: none;
+  color: inherit;
+  text-decoration: none;
 }
 
 h1.title {
-	margin-bottom: 21px;
+  margin-bottom: 21px;
 }
 
 .footer {
-        text-align: center;
-        font-size: 12px;
+  text-align: center;
+  font-size: 12px;
 }
 
 #output {
-	margin-top: 10px;
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 input, button {
-        padding: 5px;
-        margin: 5px;
-        font-size: 12px;
+  padding: 5px;
+  margin: 5px;
+  font-size: 12px;
 }
 
 input {
-	width: 400px;
+  width: 400px;
 }
 
 button {
-        width: 200px;
+  width: 200px;
 }
 
 img.generated {
-	display: block;
-	padding: 5px;
-        height: auto;
-        max-width: 300px;
+  display: block;
+  padding: 5px;
+  height: auto;
+  max-width: 300px;
 }
 
 canvas {
-        display: none;
+  display: none;
+}
+
+.mb-1 {
+  margin-bottom: 10px;
+}
+
+.mb-2 {
+  margin-bottom: 20px;
 }
