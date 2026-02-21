@@ -89,8 +89,8 @@
             margin: '10px 0'
         });
 
-        if (els.container && els.output) {
-            els.container.insertBefore(div, els.output);
+        if (els.output && els.output.parentNode) {
+            els.output.parentNode.insertBefore(div, els.output);
             els.errorDiv = div;
         }
     }
