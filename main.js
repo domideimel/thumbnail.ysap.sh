@@ -266,7 +266,7 @@
   const createDownloadLink = (filename, canvas) => {
     const a = document.createElement('a')
     a.download = filename
-    a.classList.add('generated-link')
+    a.classList.add('generated')
 
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
@@ -275,7 +275,7 @@
 
         const img = new Image()
         img.src = url
-        img.classList.add('generated-img')
+        img.classList.add('generated')
         a.appendChild(img)
         resolve(a)
       }, 'image/jpeg', 0.9)
