@@ -17,7 +17,7 @@
  * and functions defined within from polluting the global namespace.
  */
 
-(function () {
+(() => {
     'use strict';
 
     // Configuration & Constants
@@ -65,7 +65,7 @@
     /**
      * Initialize Application
      */
-    function init() {
+    const init = () => {
         // Cache DOM elements
         els.urlForm = document.getElementById('url-form');
         els.urlInput = document.getElementById('url-input');
@@ -85,9 +85,9 @@
 
         // Initialize Error Display
         createErrorDisplay();
-    }
+    };
 
-    function createErrorDisplay() {
+    const createErrorDisplay = () => {
         const div = document.createElement('div');
         div.id = 'error';
         Object.assign(div.style, {
@@ -96,15 +96,15 @@
             margin: '10px 0'
         });
 
-        if (els.output && els.output.parentNode) {
+        if (els.output?.parentNode) {
             els.output.parentNode.insertBefore(div, els.output);
             els.errorDiv = div;
         }
-    }
+    };
 
     // --- UI Helpers ---
 
-    function showError(message) {
+    const showError = (message) => {
         if (els.errorDiv) {
             els.errorDiv.textContent = message;
             els.errorDiv.style.display = 'block';
@@ -112,29 +112,27 @@
             alert(message);
         }
         console.error(message);
-    }
+    };
 
-    function hideError() {
+    const hideError = () => {
         if (els.errorDiv) {
             els.errorDiv.style.display = 'none';
         }
-    }
+    };
 
     // --- Logic Helpers ---
 
-    function shortUrl(videoId) {
-        return `https://youtu.be/${videoId}`;
-    }
+    const shortUrl = (videoId) => `https://youtu.be/${videoId}`;
 
-    function wrapText(ctx, text, maxWidth) {
+    const wrapText = (ctx, text, maxWidth) => {
         const words = text.split(' ');
         const lines = [];
         let line = '';
 
         for (const word of words) {
             const testLine = line + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            if (metrics.width > maxWidth && line !== '') {
+            const { width } = ctx.measureText(testLine);
+            if (width > maxWidth && line !== '') {
                 lines.push(line.trim());
                 line = word + ' ';
             } else {
@@ -143,26 +141,26 @@
         }
         if (line) lines.push(line.trim());
         return lines;
-    }
+    };
 
-    function getYouTubeID(url) {
+    const getYouTubeID = (url) => {
         try {
-            const parsed = new URL(url);
-            if (parsed.hostname === 'youtu.be') {
-                return parsed.pathname.slice(1);
+            const { hostname, pathname, searchParams } = new URL(url);
+            if (hostname === 'youtu.be') {
+                return pathname.slice(1).split(/[?#]/)[0];
             }
-            if (parsed.hostname.includes('youtube.com')) {
-                return parsed.searchParams.get('v');
+            if (hostname.includes('youtube.com')) {
+                return searchParams.get('v') || pathname.split('/embed/')[1]?.split(/[?#]/)[0] || pathname.split('/v/')[1]?.split(/[?#]/)[0];
             }
         } catch (e) {
-            // Invalid URL format, handled by caller
+            // Invalid URL format
         }
         return null;
-    }
+    };
 
     // --- Image Loading ---
 
-    async function loadBestThumbnail(videoId) {
+    const loadBestThumbnail = async (videoId) => {
         for (const quality of CONFIG.QUALITIES) {
             const url = `https://i.ytimg.com/vi/${videoId}/${quality}.jpg`;
             try {
@@ -174,21 +172,19 @@
             }
         }
         throw new Error('Could not load any valid thumbnail for this video.');
-    }
+    };
 
-    function loadImage(url) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => resolve(img);
-            img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-            img.src = url;
-        });
-    }
+    const loadImage = (url) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+        img.src = url;
+    });
 
     // --- Main Actions ---
 
-    async function handleGenerate(event) {
+    const handleGenerate = async (event) => {
         event.preventDefault();
         hideError();
 
@@ -216,13 +212,13 @@
             const res = await fetch(embedUrl);
 
             if (!res.ok) {
-                 new Error(`Failed to fetch video info: ${res.status}`);
+                 throw new Error(`Failed to fetch video info: ${res.status}`);
             }
 
             const data = await res.json();
 
             if (!data.title || !data.author_name) {
-                new Error('Invalid video or missing metadata');
+                throw new Error('Invalid video or missing metadata');
             }
 
             // Load thumbnail
@@ -230,7 +226,7 @@
 
             // Success
             state.lastVideoId = videoId;
-            drawImages(img, data, videoId);
+            await drawImages(img, data, videoId);
 
             if (els.downloadBtn) {
                 els.downloadBtn.style.display = 'inline-block';
@@ -244,23 +240,23 @@
                 submitBtn.textContent = 'Generate Images';
             }
         }
-    }
+    };
 
-    function downloadAll() {
+    const downloadAll = () => {
         if (!state.lastVideoId || !els.output) return;
 
-        const links = Array.from(els.output.children);
+        const links = Array.from(els.output.querySelectorAll('a[download]'));
         links.forEach((link, i) => {
             setTimeout(() => {
                 if (state.isDebug) console.log('Downloading', link.download);
                 link.click();
             }, i * 150); // Slight delay to prevent browser blocking
         });
-    }
+    };
 
     // --- Canvas Drawing ---
 
-    function createCanvas(width, height) {
+    const createCanvas = (width, height) => {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -271,32 +267,37 @@
         ctx.fillRect(0, 0, width, height);
 
         return { canvas, ctx };
-    }
+    };
 
-    function createDownloadLink(filename, canvas) {
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    const createDownloadLink = (filename, canvas) => {
         const a = document.createElement('a');
         a.download = filename;
-        a.href = dataUrl;
+        a.classList.add('generated-link');
 
-        const img = new Image();
-        img.src = dataUrl;
-        img.classList.add('generated');
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                a.href = url;
 
-        a.appendChild(img);
-        return a;
-    }
+                const img = new Image();
+                img.src = url;
+                img.classList.add('generated-img');
+                a.appendChild(img);
+                resolve(a);
+            }, 'image/jpeg', 0.9);
+        });
+    };
 
-    function drawHeadline(ctx, text, x, y) {
+    const drawHeadline = (ctx, text, x, y) => {
         ctx.save();
         ctx.font = `110px ${CONFIG.FONT}`;
         ctx.fillStyle = CONFIG.COLORS.TEXT_PRIMARY;
         ctx.textAlign = "center";
         ctx.fillText(text, x, y);
 
-        const metrics = ctx.measureText(text);
+        const { width } = ctx.measureText(text);
         const padding = 50;
-        const radiusX = metrics.width / 2 + padding;
+        const radiusX = width / 2 + padding;
         const radiusY = 110;
 
         ctx.strokeStyle = CONFIG.COLORS.HIGHLIGHT;
@@ -305,9 +306,9 @@
         ctx.ellipse(x, y - 40, radiusX, radiusY, 0, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
-    }
+    };
 
-    function drawTitleAndAuthor(ctx, data, startY, maxWidth = 1240) {
+    const drawTitleAndAuthor = (ctx, data, startY, maxWidth = 1240) => {
         ctx.save();
         ctx.textAlign = "left";
 
@@ -327,11 +328,11 @@
 
         ctx.restore();
         return lines.length;
-    }
+    };
 
     // --- Generators ---
 
-    function drawFullImage(img, data, videoId) {
+    const drawFullImage = (img, data, videoId) => {
         const { canvas, ctx } = createCanvas(CONFIG.CANVAS.WIDTH_FULL, CONFIG.CANVAS.HEIGHT_FULL);
 
         // Thumbnail with shadow
@@ -359,9 +360,9 @@
         ctx.restore();
 
         return createDownloadLink(`${videoId}-full-image.jpg`, canvas);
-    }
+    };
 
-    function drawLargeImage(img, data, videoId) {
+    const drawLargeImage = (img, data, videoId) => {
         const { canvas, ctx } = createCanvas(CONFIG.CANVAS.WIDTH_LARGE, CONFIG.CANVAS.HEIGHT_LARGE);
 
         const imgY = (canvas.height - 720) / 2;
@@ -371,9 +372,9 @@
         drawTitleAndAuthor(ctx, data, 1100);
 
         return createDownloadLink(`${videoId}-large-image.jpg`, canvas);
-    }
+    };
 
-    function drawBasicImage(img, data, videoId) {
+    const drawBasicImage = (img, data, videoId) => {
         const { canvas, ctx } = createCanvas(CONFIG.CANVAS.WIDTH_BASIC, CONFIG.CANVAS.HEIGHT_BASIC);
 
         ctx.drawImage(img, 0, 0, 1280, 720);
@@ -381,9 +382,9 @@
         drawTitleAndAuthor(ctx, data, 780, 1280 - 40);
 
         return createDownloadLink(`${videoId}-basic-image.jpg`, canvas);
-    }
+    };
 
-    function drawBlurredImage(img, data, videoId) {
+    const drawBlurredImage = (img, data, videoId) => {
         const { canvas, ctx } = createCanvas(CONFIG.CANVAS.WIDTH_BLUR, CONFIG.CANVAS.HEIGHT_BLUR);
 
         // Black base
@@ -408,10 +409,11 @@
         ctx.fillText(shortUrl(videoId), 1280 / 2, 720 / 2);
 
         return createDownloadLink(`${videoId}-blurred-image.jpg`, canvas);
-    }
+    };
 
-    function drawImages(img, data, videoId) {
-        els.output.innerHTML = ''; // Clear previous results
+    const drawImages = async (img, data, videoId) => {
+        if (!els.output) return;
+        els.output.replaceChildren();
 
         if (state.isDebug) console.log('Video Data:', data);
 
@@ -422,11 +424,13 @@
             drawBlurredImage,
         ];
 
-        generators.forEach(generate => {
-            const link = generate(img, data, videoId);
-            els.output.appendChild(link);
-        });
-    }
+        try {
+            const links = await Promise.all(generators.map(generate => generate(img, data, videoId)));
+            links.forEach(link => els.output.appendChild(link));
+        } catch (err) {
+            showError(`Error generating images: ${err.message}`);
+        }
+    };
 
     // Bootstrap
     if (document.readyState === 'loading') {
