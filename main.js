@@ -78,11 +78,8 @@
     state.isDebug = new URLSearchParams(window.location.search).has('debug')
 
     // Event Listeners
-    if (els.urlForm) els.urlForm.addEventListener('submit', handleGenerate)
-
-    if (els.downloadBtn) {
-      els.downloadBtn.addEventListener('click', downloadAll)
-    }
+    els.urlForm?.addEventListener('submit', handleGenerate)
+    els.downloadBtn?.addEventListener('click', downloadAll)
 
     // Initialize Error Display
     createErrorDisplay()
@@ -106,19 +103,17 @@
   // --- UI Helpers ---
 
   const showError = (message) => {
+    els.errorDiv?.style.setProperty('display', 'block')
     if (els.errorDiv) {
       els.errorDiv.textContent = message
-      els.errorDiv.style.display = 'block'
     } else {
       alert(message)
     }
-    console.error(message)
+    console.error?.(message)
   }
 
   const hideError = () => {
-    if (els.errorDiv) {
-      els.errorDiv.style.display = 'none'
-    }
+    els.errorDiv?.style.setProperty('display', 'none')
   }
 
   // --- Logic Helpers ---
@@ -153,7 +148,7 @@
       if (hostname.includes('youtube.com')) {
         return searchParams.get('v') || pathname.split('/embed/')[1]?.split(/[?#]/)[0] || pathname.split('/v/')[1]?.split(/[?#]/)[0]
       }
-    } catch (e) {
+    } catch {
       // Invalid URL format
     }
     return null
@@ -229,9 +224,7 @@
       state.lastVideoId = videoId
       await drawImages(img, data, videoId)
 
-      if (els.downloadBtn) {
-        els.downloadBtn.style.display = 'inline-block'
-      }
+      els.downloadBtn?.style.setProperty('display', 'inline-block')
 
     } catch (err) {
       showError(err.message)
@@ -244,9 +237,9 @@
   }
 
   const downloadAll = () => {
-    if (!state.lastVideoId || !els.output) return
+    if (!state.lastVideoId) return
 
-    const links = Array.from(els.output.querySelectorAll('a[download]'))
+    const links = Array.from(els.output?.querySelectorAll('a[download]') ?? [])
     links.forEach((link, i) => {
       setTimeout(() => {
         if (state.isDebug) console.log('Downloading', link.download)
@@ -413,8 +406,7 @@
   }
 
   const drawImages = async (img, data, videoId) => {
-    if (!els.output) return
-    els.output.replaceChildren()
+    els.output?.replaceChildren()
 
     if (state.isDebug) console.log('Video Data:', data)
 
