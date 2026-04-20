@@ -119,8 +119,6 @@
 
   // --- Logic Helpers ---
 
-  const shortUrl = (videoId) => `https://youtu.be/${videoId}`
-
   const wrapText = (ctx, text, maxWidth) => {
     const words = text.split(' ')
     const lines = []
