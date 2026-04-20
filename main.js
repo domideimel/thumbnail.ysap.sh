@@ -205,6 +205,12 @@
       submitBtn.textContent = 'Generating...'
     }
 
+    // Show loading spinner
+    els.output?.replaceChildren()
+    const spinner = document.createElement('div')
+    spinner.className = 'spinner'
+    els.output?.appendChild(spinner)
+
     try {
       // Fetch metadata and thumbnail in parallel
       const embedUrl = `${CONFIG.API_URL}?url=${encodeURIComponent(shortUrl(videoId))}`
@@ -232,6 +238,7 @@
     } catch (err) {
       showError(err.message)
     } finally {
+      spinner.remove()
       if (submitBtn) {
         submitBtn.disabled = false
         submitBtn.textContent = 'Generate Images'
