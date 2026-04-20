@@ -9,6 +9,7 @@
  * # Contributors
  * - Dave Eddy <ysap@daveeddy.com>
  * - Dominik Deimel <info@dominikdeimel.com>
+ * - Christian Hase <christian@hase.hamburg>
  */
 
 /**
@@ -146,6 +147,9 @@
         return pathname.slice(1).split(/[?#]/)[0]
       }
       if (hostname.includes('youtube.com')) {
+        if (pathname.split('/').includes('live')) {
+          return pathname.split('/')[2]?.split(/[?#]/)[0]
+        }
         return searchParams.get('v') || pathname.split('/embed/')[1]?.split(/[?#]/)[0] || pathname.split('/v/')[1]?.split(/[?#]/)[0]
       }
     } catch {
@@ -153,6 +157,8 @@
     }
     return null
   }
+
+  const shortUrl = (videoId) => `https://youtu.be/${videoId}`
 
   // --- Image Loading ---
 
@@ -203,8 +209,8 @@
     }
 
     try {
-      // Fetch video metadata
-      const embedUrl = `${CONFIG.API_URL}?url=${encodeURIComponent(url)}`
+      // Fetch video metadata - use shortUrl since Noembed doesn't support youtube.com/live URLs
+      const embedUrl = `${CONFIG.API_URL}?url=${encodeURIComponent(shortUrl(videoId))}`
       const res = await fetch(embedUrl)
 
       if (!res.ok) {
