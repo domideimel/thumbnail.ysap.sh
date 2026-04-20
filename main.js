@@ -145,10 +145,9 @@
         return pathname.slice(1).split(/[?#]/)[0]
       }
       if (hostname.includes('youtube.com')) {
-        if (pathname.split('/').includes('live')) {
-          return pathname.split('/')[2]?.split(/[?#]/)[0]
-        }
-        return searchParams.get('v') || pathname.split('/embed/')[1]?.split(/[?#]/)[0] || pathname.split('/v/')[1]?.split(/[?#]/)[0]
+        const segments = pathname.split('/')
+        if (segments.includes('live')) return segments[2]?.split(/[?#]/)[0]
+        return searchParams.get('v') || segments.find((_, i, a) => a[i - 1] === 'embed' || a[i - 1] === 'v')?.split(/[?#]/)[0]
       }
     } catch {
       // Invalid URL format
@@ -200,16 +199,19 @@
       return
     }
 
-    const submitBtn = els.urlForm.querySelector('button[type="submit"]')
+    const submitBtn = els.urlForm?.querySelector('button[type="submit"]')
     if (submitBtn) {
       submitBtn.disabled = true
       submitBtn.textContent = 'Generating...'
     }
 
     try {
-      // Fetch video metadata - use shortUrl since Noembed doesn't support youtube.com/live URLs
+      // Fetch metadata and thumbnail in parallel
       const embedUrl = `${CONFIG.API_URL}?url=${encodeURIComponent(shortUrl(videoId))}`
-      const res = await fetch(embedUrl)
+      const [res, img] = await Promise.all([
+        fetch(embedUrl),
+        loadBestThumbnail(videoId)
+      ])
 
       if (!res.ok) {
         new Error(`Failed to fetch video info: ${res.status}`)
@@ -220,9 +222,6 @@
       if (!data.title || !data.author_name) {
         new Error('Invalid video or missing metadata')
       }
-
-      // Load thumbnail
-      const img = await loadBestThumbnail(videoId)
 
       // Success
       state.lastVideoId = videoId
@@ -350,7 +349,7 @@
 
     // URL
     ctx.save()
-    ctx.fillStyle = '#fff'
+    ctx.fillStyle = CONFIG.COLORS.TEXT_PRIMARY
     ctx.font = `80px ${CONFIG.FONT}`
     ctx.textAlign = 'center'
     const urlY = 1100 + (titleLineCount * 58) + 110
@@ -400,7 +399,7 @@
     ctx.fillRect(0, 0, 1280, 720)
 
     // URL
-    ctx.fillStyle = '#fff'
+    ctx.fillStyle = CONFIG.COLORS.TEXT_PRIMARY
     ctx.font = `80px ${CONFIG.FONT}`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
